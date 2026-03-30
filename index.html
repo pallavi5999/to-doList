@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ES6 Todo — Learn by Doing</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --accent: #c8f542;
+    --accent2: #f5a623;
+    --text: #f0f0f0;
+    --muted: #6b6b6b;
+    --done-bg: #1a1f0d;
+    --tag-spread: #3b82f6;
+    --tag-rest: #a855f7;
+    --tag-arrow: #ec4899;
+    --tag-destruct: #f59e0b;
+    --tag-filter: #10b981;
+    --tag-map: #06b6d4;
+    --tag-reduce: #f97316;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 16px 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    margin-top: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+
+  /* ── CONCEPT LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+  }
+
+  /* ── INPUT AREA ── */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 12px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  .priority-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 0 14px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .priority-select:focus { border-color: var(--accent); }
+
+  .add-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 0 22px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: transform .15s, opacity .15s;
+    white-space: nowrap;
+  }
+
+  .add-btn:hover { opacity: .85; transform: translateY(-1px); }
+  .add-btn:active { transform: translateY(0); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 2px;
+  }
+
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .stat-num {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+  }
+
+  .percent-bar-wrap {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-left: auto;
+  }
+
+  .percent-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width .4s ease;
+  }
+
+  /* ── FILTER TABS ── */
+  .filter-tabs {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: 0.04em;
+  }
+
+  .tab.active, .tab:hover {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ── TODO LIST ── */
+  .todo-list {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .todo-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color .2s, opacity .2s;
+    animation: slideIn .25s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .todo-item.done {
+    background: var(--done-bg);
+    opacity: .65;
+  }
+
+  .todo-item:hover { border-color: #3a3a3a; }
+
+  .check-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all .15s;
+    font-size: 13px;
+    color: transparent;
+  }
+
+  .todo-item.done .check-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  .todo-body { flex: 1; min-width: 0; }
+
+  .todo-text {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color .2s;
+  }
+
+  .todo-item.done .todo-text {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .todo-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+
+  .priority-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .p-high  { background: #ef4444; }
+  .p-mid   { background: var(--accent2); }
+  .p-low   { background: var(--muted); }
+
+  .priority-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .concept-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+
+  .del-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color .15s, background .15s;
+    flex-shrink: 0;
+  }
+
+  .del-btn:hover { color: #ef4444; background: rgba(239,68,68,.08); }
+
+  /* ── CODE PANEL ── */
+  .code-panel {
+    width: 100%;
+    max-width: 720px;
+    margin-top: 40px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .code-panel-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .code-panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+
+  .code-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .code-tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .code-tab.active { border-color: var(--border); color: var(--text); }
+  .code-tab:hover  { color: var(--text); }
+
+  pre {
+    background: #0a0a0a;
+    padding: 24px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: #ccc;
+  }
+
+  .kw   { color: #c792ea; }
+  .fn   { color: #82aaff; }
+  .str  { color: #c3e88d; }
+  .cm   { color: #546e7a; font-style: italic; }
+  .acc  { color: var(--accent); font-weight: 500; }
+  .num  { color: var(--accent2); }
+  .op   { color: #89ddff; }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
+
+  .empty-icon { font-size: 2rem; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">// ES6 in Practice</p>
+  <h1>Todo <span>List</span></h1>
+  <p class="subtitle">
+    Every action below uses real ES6. Watch which concepts fire as you add, complete &amp; delete tasks.
+  </p>
+  <div class="legend" id="legend"></div>
+</header>
+
+<!-- INPUT -->
+<div class="input-card">
+  <div class="input-row">
+    <input type="text" id="taskInput" placeholder="What needs doing?" />
+    <select class="priority-select" id="prioritySelect">
+      <option value="high">🔴 High</option>
+      <option value="mid" selected>🟡 Mid</option>
+      <option value="low">⚪ Low</option>
+    </select>
+    <button class="add-btn" onclick="addTask()">+ Add</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar" id="statsBar"></div>
+
+<!-- FILTER TABS -->
+<div class="filter-tabs" id="filterTabs"></div>
+
+<!-- LIST -->
+<div class="todo-list" id="todoList"></div>
+
+<!-- CODE PANEL -->
+<div class="code-panel">
+  <div class="code-panel-header">
+    <span class="code-panel-title">// Live ES6 Code</span>
+    <div class="code-tabs" id="codeTabs"></div>
+  </div>
+  <pre id="codeDisplay"></pre>
+</div>
+
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA & STATE
+// ─────────────────────────────────────────────
+
+let state = {
+  todos: [
+    { id: 1, text: "Learn Arrow Functions",     done: false, priority: "high" },
+    { id: 2, text: "Practice Destructuring",    done: true,  priority: "mid"  },
+    { id: 3, text: "Master Spread & Rest",      done: false, priority: "high" },
+    { id: 4, text: "Use .filter() on arrays",   done: false, priority: "mid"  },
+    { id: 5, text: "Map tasks to UI elements",  done: true,  priority: "low"  },
+    { id: 6, text: "Reduce to get total count", done: false, priority: "low"  },
+  ],
+  filter: "all",
+  nextId: 7,
+  activeCode: "spread",
+};
+
+// ─────────────────────────────────────────────
+//  CONCEPTS META
+// ─────────────────────────────────────────────
+
+const CONCEPTS = [
+  { key: "spread",    label: "Spread ...",     color: "#3b82f6" },
+  { key: "rest",      label: "Rest ...",       color: "#a855f7" },
+  { key: "arrow",     label: "Arrow =>",       color: "#ec4899" },
+  { key: "destruct",  label: "Destructuring",  color: "#f59e0b" },
+  { key: "filter",    label: ".filter()",      color: "#10b981" },
+  { key: "map",       label: ".map()",         color: "#06b6d4" },
+  { key: "reduce",    label: ".reduce()",      color: "#f97316" },
+];
+
+// ─────────────────────────────────────────────
+//  CONCEPT TAG per todo (rotate for demo)
+// ─────────────────────────────────────────────
+
+const conceptOrder = ["spread","rest","arrow","destruct","filter","map","reduce"];
+const getConceptForId = id => conceptOrder[(id - 1) % conceptOrder.length];
+
+// ─────────────────────────────────────────────
+//  ES6 CODE SNIPPETS
+// ─────────────────────────────────────────────
+
+const CODE = {
+  spread: `<span class="cm">// ── SPREAD: add a task ──────────────────────</span>
+<span class="kw">const</span> <span class="fn">addTask</span> <span class="op">=</span> <span class="acc">(text, priority)</span> <span class="op">=></span> {
+  <span class="kw">const</span> newTodo <span class="op">=</span> { id: nextId<span class="op">++</span>, text, done: <span class="kw">false</span>, priority };
+
+  <span class="cm">// Spread copies ALL existing todos into a NEW array</span>
+  state.todos <span class="op">=</span> [<span class="acc">...state.todos</span>, newTodo];
+  <span class="cm">//              ↑ spread operator expands the old array</span>
+
+  render();
+};`,
+
+  rest: `<span class="cm">// ── REST: collect extra args ─────────────────</span>
+<span class="kw">const</span> <span class="fn">logTask</span> <span class="op">=</span> (id, text, <span class="acc">...meta</span>) <span class="op">=></span> {
+  <span class="cm">//                         ↑ rest gathers remaining args</span>
+  console.log(<span class="str">\`Task #\${id}: \${text}\`</span>);
+  console.log(<span class="str">'Extra metadata:'</span>, meta);
+};
+
+logTask(<span class="num">1</span>, <span class="str">'Learn ES6'</span>, <span class="str">'high'</span>, <span class="str">'2024-01-01'</span>, <span class="str">'work'</span>);
+<span class="cm">// meta ← ['high', '2024-01-01', 'work']</span>`,
+
+  arrow: `<span class="cm">// ── ARROW FUNCTIONS ─────────────────────────</span>
+
+<span class="cm">// Traditional function</span>
+<span class="kw">function</span> <span class="fn">oldToggle</span>(id) {
+  <span class="kw">return</span> todos.map(<span class="kw">function</span>(t) {
+    <span class="kw">return</span> t.id <span class="op">===</span> id ? { ...t, done: !t.done } : t;
+  });
+}
+
+<span class="cm">// Arrow function — concise, no own 'this'</span>
+<span class="kw">const</span> <span class="fn">toggle</span> <span class="op">=</span> <span class="acc">(id)</span> <span class="acc">=></span>
+  todos.map(<span class="acc">t =></span> t.id <span class="op">===</span> id ? { ...t, done: <span class="op">!</span>t.done } : t);
+<span class="cm">//           ↑ implicit return, no braces needed</span>`,
+
+  destruct: `<span class="cm">// ── DESTRUCTURING ───────────────────────────</span>
+
+<span class="cm">// Object destructuring — pull out named props</span>
+<span class="kw">const</span> renderItem <span class="op">=</span> (<span class="acc">{ id, text, done, priority }</span>) <span class="op">=></span> {
+  <span class="cm">//                ↑ destructured right in the param</span>
+  <span class="kw">return</span> <span class="str">\`&lt;li data-id="\${id}" class="\${done ? 'done' : ''}"&gt;
+    \${text} [\${priority}]
+  &lt;/li&gt;\`</span>;
+};
+
+<span class="cm">// Array destructuring</span>
+<span class="kw">const</span> [<span class="acc">first, second, ...rest</span>] <span class="op">=</span> state.todos;
+<span class="cm">// first ← todo[0], second ← todo[1], rest ← remaining</span>`,
+
+  filter: `<span class="cm">// ── FILTER: show only pending tasks ─────────</span>
+<span class="kw">const</span> pending <span class="op">=</span> state.todos.<span class="acc">filter</span>(
+  <span class="acc">({ done })</span> <span class="op">=></span> <span class="op">!</span>done
+<span class="cm">//  ↑ destructure in callback    ↑ keep if NOT done</span>
+);
+
+<span class="kw">const</span> highPriority <span class="op">=</span> state.todos.<span class="acc">filter</span>(
+  <span class="acc">({ priority })</span> <span class="op">=></span> priority <span class="op">===</span> <span class="str">'high'</span>
+);
+
+<span class="cm">// filter NEVER mutates — it returns a new array</span>
+console.log(pending.length, <span class="str">'tasks remaining'</span>);`,
+
+  map: `<span class="cm">// ── MAP: transform every todo into HTML ─────</span>
+<span class="kw">const</span> listHTML <span class="op">=</span> state.todos
+  .<span class="acc">map</span>(<span class="acc">({ id, text, done, priority })</span> <span class="op">=></span> <span class="str">\`
+    &lt;li class="\${done ? 'done' : ''}"&gt;
+      &lt;span&gt;\${text}&lt;/span&gt;
+      &lt;em&gt;\${priority}&lt;/em&gt;
+    &lt;/li&gt;
+  \`</span>)
+  .join(<span class="str">''</span>);
+<span class="cm">//  ↑ map returns a new array; join makes one string</span>
+
+document.getElementById(<span class="str">'list'</span>).innerHTML <span class="op">=</span> listHTML;`,
+
+  reduce: `<span class="cm">// ── REDUCE: compute summary stats ───────────</span>
+<span class="kw">const</span> stats <span class="op">=</span> state.todos.<span class="acc">reduce</span>(
+  (acc, <span class="acc">{ done, priority }</span>) <span class="op">=></span> ({
+    total:    acc.total <span class="op">+</span> <span class="num">1</span>,
+    done:     acc.done  <span class="op">+</span> (done ? <span class="num">1</span> : <span class="num">0</span>),
+    highLeft: acc.highLeft <span class="op">+</span>
+              (priority <span class="op">===</span> <span class="str">'high'</span> <span class="op">&&</span> <span class="op">!</span>done ? <span class="num">1</span> : <span class="num">0</span>),
+  }),
+  { total: <span class="num">0</span>, done: <span class="num">0</span>, highLeft: <span class="num">0</span> }
+<span class="cm">//  ↑ initial accumulator value</span>
+);
+<span class="cm">// stats ← { total: 6, done: 2, highLeft: 2 }</span>`,
+};
+
+// ─────────────────────────────────────────────
+//  ADD TASK  (uses Spread + Arrow)
+// ─────────────────────────────────────────────
+
+const addTask = () => {
+  const input = document.getElementById("taskInput");
+  const priority = document.getElementById("prioritySelect").value;
+  const text = input.value.trim();
+  if (!text) { input.focus(); return; }
+
+  // ── SPREAD ─────────────────────────────
+  const newTodo = { id: state.nextId++, text, done: false, priority };
+  state.todos = [...state.todos, newTodo];
+
+  input.value = "";
+  state.activeCode = "spread";
+  render();
+};
+
+document.getElementById("taskInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") addTask();
+});
+
+// ─────────────────────────────────────────────
+//  TOGGLE  (uses Arrow + Spread inside map)
+// ─────────────────────────────────────────────
+
+const toggleTask = id => {
+  // ── ARROW + SPREAD ─────────────────────
+  state.todos = state.todos.map(t =>
+    t.id === id ? { ...t, done: !t.done } : t
+  );
+  state.activeCode = "arrow";
+  render();
+};
+
+// ─────────────────────────────────────────────
+//  DELETE  (uses Filter)
+// ─────────────────────────────────────────────
+
+const deleteTask = id => {
+  // ── FILTER ─────────────────────────────
+  state.todos = state.todos.filter(({ id: tid }) => tid !== id);
+  state.activeCode = "filter";
+  render();
+};
+
+// ─────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────
+
+const render = () => {
+  renderLegend();
+  renderStats();
+  renderFilterTabs();
+  renderList();
+  renderCodeTabs();
+  renderCode();
+};
+
+// ── Legend ──────────────────────────────────
+const renderLegend = () => {
+  const el = document.getElementById("legend");
+  el.innerHTML = CONCEPTS
+    .map(({ key, label, color }) =>   // ── MAP
+      `<span class="badge" style="background:${color}18;color:${color};border-color:${color}40">${label}</span>`
+    ).join("");
+};
+
+// ── Stats (uses Reduce) ──────────────────────
+const renderStats = () => {
+  // ── DESTRUCTURING + REDUCE ─────────────
+  const { total, done, highLeft } = state.todos.reduce(
+    (acc, { done, priority }) => ({
+      total:    acc.total + 1,
+      done:     acc.done  + (done ? 1 : 0),
+      highLeft: acc.highLeft + (priority === "high" && !done ? 1 : 0),
+    }),
+    { total: 0, done: 0, highLeft: 0 }
+  );
+
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById("statsBar").innerHTML = `
+    <div class="stat"><span class="stat-num">${total}</span><span class="stat-label">TOTAL</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="stat-num">${done}</span><span class="stat-label">DONE</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="stat-num" style="color:#ef4444">${highLeft}</span><span class="stat-label">HIGH LEFT</span></div>
+    <div class="percent-bar-wrap" title="${pct}% complete">
+      <div class="percent-bar-fill" style="width:${pct}%"></div>
+    </div>
+    <span class="stat-label">${pct}%</span>
+  `;
+};
+
+// ── Filter Tabs ──────────────────────────────
+const FILTERS = ["all","pending","done"];
+
+const renderFilterTabs = () => {
+  document.getElementById("filterTabs").innerHTML = FILTERS
+    .map(f =>   // ── MAP
+      `<button class="tab ${state.filter===f?'active':''}"
+        onclick="setFilter('${f}')">${f.toUpperCase()}</button>`
+    ).join("");
+};
+
+const setFilter = f => {
+  state.filter = f;
+  state.activeCode = "filter";
+  render();
+};
+
+// ── Todo List (uses Filter + Map) ────────────
+const renderList = () => {
+  // ── FILTER ─────────────────────────────
+  const visible = state.todos.filter(({ done }) => {
+    if (state.filter === "pending") return !done;
+    if (state.filter === "done")    return  done;
+    return true;
+  });
+
+  if (!visible.length) {
+    document.getElementById("todoList").innerHTML =
+      `<div class="empty"><div class="empty-icon">✓</div>No tasks here yet.</div>`;
+    return;
+  }
+
+  // ── MAP ────────────────────────────────
+  document.getElementById("todoList").innerHTML = visible
+    .map(({ id, text, done, priority }) => {
+      const concept = getConceptForId(id);
+      const c = CONCEPTS.find(x => x.key === concept);
+      const dotClass = priority === "high" ? "p-high" : priority === "mid" ? "p-mid" : "p-low";
+      return `
+        <div class="todo-item ${done?"done":""}" id="todo-${id}">
+          <button class="check-btn" onclick="toggleTask(${id})" title="Toggle">${done?"✓":""}</button>
+          <div class="todo-body">
+            <div class="todo-text">${escHtml(text)}</div>
+            <div class="todo-meta">
+              <div class="priority-dot ${dotClass}"></div>
+              <span class="priority-label">${priority.toUpperCase()}</span>
+              <span class="concept-tag"
+                style="background:${c.color}18;color:${c.color}">
+                ${c.label}
+              </span>
+            </div>
+          </div>
+          <button class="del-btn" onclick="deleteTask(${id})" title="Delete">×</button>
+        </div>`;
+    }).join("");
+};
+
+// ── Code Tabs ────────────────────────────────
+const renderCodeTabs = () => {
+  document.getElementById("codeTabs").innerHTML = CONCEPTS
+    .map(({ key, label }) =>   // ── MAP
+      `<button class="code-tab ${state.activeCode===key?'active':''}"
+        onclick="setCode('${key}')">${label}</button>`
+    ).join("");
+};
+
+const setCode = key => {
+  state.activeCode = key;
+  render();
+};
+
+// ── Code Display ─────────────────────────────
+const renderCode = () => {
+  document.getElementById("codeDisplay").innerHTML = CODE[state.activeCode] || "";
+};
+
+// ─────────────────────────────────────────────
+//  UTIL
+// ─────────────────────────────────────────────
+
+const escHtml = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+// ─────────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────────
+
+render();
+</script>
+</body>
+</html>
