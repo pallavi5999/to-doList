@@ -524,93 +524,196 @@ const getConceptForId = id => conceptOrder[(id - 1) % conceptOrder.length];
 // ─────────────────────────────────────────────
 
 const CODE = {
-  spread: `<span class="cm">// ── SPREAD: add a task ──────────────────────</span>
-<span class="kw">const</span> <span class="fn">addTask</span> <span class="op">=</span> <span class="acc">(text, priority)</span> <span class="op">=></span> {
-  <span class="kw">const</span> newTodo <span class="op">=</span> { id: nextId<span class="op">++</span>, text, done: <span class="kw">false</span>, priority };
 
-  <span class="cm">// Spread copies ALL existing todos into a NEW array</span>
+  // ── SPREAD ───────────────────────────────────────────────────────────────
+  spread: `<span class="cm">// SPREAD ( ... ) — used in addTask() when you click "+ Add"
+// The spread operator copies every item from the OLD array
+// into a brand-new array, then appends the new todo at the end.
+// This keeps state IMMUTABLE — we never push() into the old array.</span>
+
+<span class="kw">const</span> <span class="fn">addTask</span> <span class="op">=</span> () <span class="op">=></span> {
+  <span class="kw">const</span> input    <span class="op">=</span> document.getElementById(<span class="str">"taskInput"</span>);
+  <span class="kw">const</span> priority <span class="op">=</span> document.getElementById(<span class="str">"prioritySelect"</span>).value;
+  <span class="kw">const</span> text     <span class="op">=</span> input.value.trim();
+
+  <span class="cm">// Guard: do nothing if the input box is empty</span>
+  <span class="kw">if</span> (!text) { input.focus(); <span class="kw">return</span>; }
+
+  <span class="cm">// Build the new todo object (shorthand property: text = text)</span>
+  <span class="kw">const</span> newTodo <span class="op">=</span> { id: state.nextId<span class="op">++</span>, text, done: <span class="kw">false</span>, priority };
+
+  <span class="cm">// SPREAD in action:
+  //   ...state.todos  →  expands all existing todos
+  //   newTodo         →  appends the new one at the end
+  //   Result: a fresh array, old array untouched</span>
   state.todos <span class="op">=</span> [<span class="acc">...state.todos</span>, newTodo];
-  <span class="cm">//              ↑ spread operator expands the old array</span>
 
-  render();
+  input.value <span class="op">=</span> <span class="str">""</span>;       <span class="cm">// clear the input field</span>
+  state.activeCode <span class="op">=</span> <span class="str">"spread"</span>;
+  render();               <span class="cm">// re-draw the entire UI</span>
 };`,
 
-  rest: `<span class="cm">// ── REST: collect extra args ─────────────────</span>
-<span class="kw">const</span> <span class="fn">logTask</span> <span class="op">=</span> (id, text, <span class="acc">...meta</span>) <span class="op">=></span> {
-  <span class="cm">//                         ↑ rest gathers remaining args</span>
-  console.log(<span class="str">\`Task #\${id}: \${text}\`</span>);
-  console.log(<span class="str">'Extra metadata:'</span>, meta);
+  // ── REST ─────────────────────────────────────────────────────────────────
+  rest: `<span class="cm">// REST ( ...params ) — used in getConceptForId() & renderList()
+// REST is the OPPOSITE of Spread.
+//   Spread:  expands  an array into individual items
+//   Rest:    collects individual items into an array
+//
+// Here it appears in array destructuring inside renderList()
+// to separate the first visible todo from all the remaining ones.</span>
+
+<span class="cm">// --- Where REST appears in this app ---</span>
+
+<span class="cm">// 1. conceptOrder holds all 7 ES6 concept keys</span>
+<span class="kw">const</span> conceptOrder <span class="op">=</span> [<span class="str">"spread"</span>,<span class="str">"rest"</span>,<span class="str">"arrow"</span>,<span class="str">"destruct"</span>,<span class="str">"filter"</span>,<span class="str">"map"</span>,<span class="str">"reduce"</span>];
+
+<span class="cm">// 2. Arrow fn uses % (modulo) to cycle through concepts by todo id</span>
+<span class="kw">const</span> <span class="fn">getConceptForId</span> <span class="op">=</span> <span class="acc">id</span> <span class="op">=></span> conceptOrder[(id <span class="op">-</span> <span class="num">1</span>) <span class="op">%</span> conceptOrder.length];
+
+<span class="cm">// 3. REST in destructuring — inside renderList() we can do:
+//    const [first, ...remaining] = visible;
+//    first     → the very first todo object
+//    remaining → an array of ALL the other todos
+//    (REST gathers "the rest" into one variable)</span>
+<span class="kw">const</span> [first, <span class="acc">...remaining</span>] <span class="op">=</span> state.todos;
+<span class="cm">//             ↑ rest parameter — collects everything after index 0</span>
+
+console.log(<span class="str">"First todo:"</span>, first.text);
+console.log(<span class="str">"Remaining count:"</span>, remaining.length);`,
+
+  // ── ARROW ────────────────────────────────────────────────────────────────
+  arrow: `<span class="cm">// ARROW FUNCTIONS ( => ) — used everywhere in this app
+// Shorter syntax than 'function'. No own 'this' binding.
+// When the body is a single expression, the return is IMPLICIT
+// (no need to write the 'return' keyword).</span>
+
+<span class="cm">// --- toggleTask: called when you click the ✓ checkbox ---</span>
+<span class="cm">// Receives the todo's id, flips its 'done' boolean</span>
+<span class="kw">const</span> <span class="fn">toggleTask</span> <span class="op">=</span> <span class="acc">id</span> <span class="op">=></span> {
+  <span class="cm">// Arrow inside .map() — single expression, implicit return
+  // Spread ( {...t} ) copies the todo, then overrides 'done'</span>
+  state.todos <span class="op">=</span> state.todos.map(<span class="acc">t</span> <span class="op">=></span>
+    t.id <span class="op">===</span> id ? { <span class="acc">...t</span>, done: <span class="op">!</span>t.done } : t
+  );
+  <span class="cm">//              ↑ ternary: if id matches → flip done, else keep t as-is</span>
+  state.activeCode <span class="op">=</span> <span class="str">"arrow"</span>;
+  render();
 };
 
-logTask(<span class="num">1</span>, <span class="str">'Learn ES6'</span>, <span class="str">'high'</span>, <span class="str">'2024-01-01'</span>, <span class="str">'work'</span>);
-<span class="cm">// meta ← ['high', '2024-01-01', 'work']</span>`,
+<span class="cm">// --- Other arrow functions in this app (one-liners) ---</span>
+<span class="kw">const</span> <span class="fn">getConceptForId</span> <span class="op">=</span> <span class="acc">id</span>  <span class="op">=></span> conceptOrder[(id <span class="op">-</span> <span class="num">1</span>) <span class="op">%</span> conceptOrder.length];
+<span class="kw">const</span> <span class="fn">setFilter</span>       <span class="op">=</span> <span class="acc">f</span>   <span class="op">=></span> { state.filter <span class="op">=</span> f; render(); };
+<span class="kw">const</span> <span class="fn">setCode</span>         <span class="op">=</span> <span class="acc">key</span> <span class="op">=></span> { state.activeCode <span class="op">=</span> key; render(); };
+<span class="kw">const</span> <span class="fn">escHtml</span>         <span class="op">=</span> <span class="acc">s</span>   <span class="op">=></span> s.replace(<span class="op">/</span>&amp;<span class="op">/</span>g, <span class="str">"&amp;amp;"</span>);`,
 
-  arrow: `<span class="cm">// ── ARROW FUNCTIONS ─────────────────────────</span>
+  // ── DESTRUCTURING ─────────────────────────────────────────────────────────
+  destruct: `<span class="cm">// DESTRUCTURING — used in renderList(), renderStats(), renderLegend()
+// Pulls specific properties OUT of an object (or array) by name,
+// directly into variables. Avoids writing todo.id, todo.text, etc.</span>
 
-<span class="cm">// Traditional function</span>
-<span class="kw">function</span> <span class="fn">oldToggle</span>(id) {
-  <span class="kw">return</span> todos.map(<span class="kw">function</span>(t) {
-    <span class="kw">return</span> t.id <span class="op">===</span> id ? { ...t, done: !t.done } : t;
-  });
-}
+<span class="cm">// --- renderList(): each todo object is destructured in the callback ---</span>
+<span class="kw">const</span> <span class="fn">renderList</span> <span class="op">=</span> () <span class="op">=></span> {
+  <span class="kw">const</span> visible <span class="op">=</span> state.todos.filter((<span class="acc">{ done }</span>) <span class="op">=></span> { <span class="cm">/* ... */</span> });
+  <span class="cm">//                               ↑ destructure 'done' from each todo</span>
 
-<span class="cm">// Arrow function — concise, no own 'this'</span>
-<span class="kw">const</span> <span class="fn">toggle</span> <span class="op">=</span> <span class="acc">(id)</span> <span class="acc">=></span>
-  todos.map(<span class="acc">t =></span> t.id <span class="op">===</span> id ? { ...t, done: <span class="op">!</span>t.done } : t);
-<span class="cm">//           ↑ implicit return, no braces needed</span>`,
-
-  destruct: `<span class="cm">// ── DESTRUCTURING ───────────────────────────</span>
-
-<span class="cm">// Object destructuring — pull out named props</span>
-<span class="kw">const</span> renderItem <span class="op">=</span> (<span class="acc">{ id, text, done, priority }</span>) <span class="op">=></span> {
-  <span class="cm">//                ↑ destructured right in the param</span>
-  <span class="kw">return</span> <span class="str">\`&lt;li data-id="\${id}" class="\${done ? 'done' : ''}"&gt;
-    \${text} [\${priority}]
-  &lt;/li&gt;\`</span>;
+  document.getElementById(<span class="str">"todoList"</span>).innerHTML <span class="op">=</span> visible
+    .map((<span class="acc">{ id, text, done, priority }</span>) <span class="op">=></span> {
+    <span class="cm">// ↑ instead of (todo) => todo.id, todo.text ...
+    //   we unpack all 4 properties right in the parameter list</span>
+      <span class="kw">const</span> concept <span class="op">=</span> getConceptForId(id);
+      <span class="kw">const</span> c        <span class="op">=</span> CONCEPTS.find(<span class="acc">x</span> <span class="op">=></span> x.key <span class="op">===</span> concept);
+      <span class="kw">return</span> <span class="str">\`&lt;div class="todo-item \${done ? "done" : ""}"&gt;...\`</span>;
+    }).join(<span class="str">""</span>);
 };
 
-<span class="cm">// Array destructuring</span>
-<span class="kw">const</span> [<span class="acc">first, second, ...rest</span>] <span class="op">=</span> state.todos;
-<span class="cm">// first ← todo[0], second ← todo[1], rest ← remaining</span>`,
+<span class="cm">// --- renderStats(): destructure the object returned by .reduce() ---</span>
+<span class="kw">const</span> <span class="acc">{ total, done, highLeft }</span> <span class="op">=</span> state.todos.reduce( <span class="cm">/* ... */</span> );
+<span class="cm">// ↑ the reduce returns { total, done, highLeft }
+//   destructuring unpacks all three into separate variables at once</span>
 
-  filter: `<span class="cm">// ── FILTER: show only pending tasks ─────────</span>
-<span class="kw">const</span> pending <span class="op">=</span> state.todos.<span class="acc">filter</span>(
-  <span class="acc">({ done })</span> <span class="op">=></span> <span class="op">!</span>done
-<span class="cm">//  ↑ destructure in callback    ↑ keep if NOT done</span>
+<span class="cm">// --- renderLegend(): destructure each concept object ---</span>
+CONCEPTS.map((<span class="acc">{ key, label, color }</span>) <span class="op">=></span>
+  <span class="str">\`&lt;span style="color:\${color}"&gt;\${label}&lt;/span&gt;\`</span>
+);`,
+
+  // ── FILTER ───────────────────────────────────────────────────────────────
+  filter: `<span class="cm">// .filter() — used in deleteTask() and renderList()
+// Creates a NEW array containing only items where the callback returns true.
+// The original array is NEVER modified (non-destructive).</span>
+
+<span class="cm">// --- deleteTask(): remove one todo by its id ---</span>
+<span class="kw">const</span> <span class="fn">deleteTask</span> <span class="op">=</span> <span class="acc">id</span> <span class="op">=></span> {
+  <span class="cm">// Keep every todo whose id does NOT match the one to delete.
+  // { id: tid } renames 'id' to 'tid' to avoid clashing with the outer 'id'</span>
+  state.todos <span class="op">=</span> state.todos.<span class="acc">filter</span>((<span class="acc">{ id: tid }</span>) <span class="op">=></span> tid <span class="op">!==</span> id);
+  <span class="cm">//                                  ↑ renaming destructure</span>
+  state.activeCode <span class="op">=</span> <span class="str">"filter"</span>;
+  render();
+};
+
+<span class="cm">// --- renderList(): show only the todos that match the active tab ---</span>
+<span class="kw">const</span> visible <span class="op">=</span> state.todos.<span class="acc">filter</span>((<span class="acc">{ done }</span>) <span class="op">=></span> {
+  <span class="kw">if</span> (state.filter <span class="op">===</span> <span class="str">"pending"</span>) <span class="kw">return</span> <span class="op">!</span>done;  <span class="cm">// only incomplete</span>
+  <span class="kw">if</span> (state.filter <span class="op">===</span> <span class="str">"done"</span>)    <span class="kw">return</span>  done;  <span class="cm">// only completed</span>
+  <span class="kw">return</span> <span class="kw">true</span>;                                    <span class="cm">// "all" → keep everything</span>
+});
+<span class="cm">// state.todos is unchanged — 'visible' is a separate filtered copy</span>`,
+
+  // ── MAP ──────────────────────────────────────────────────────────────────
+  map: `<span class="cm">// .map() — used in renderList(), renderLegend(), renderFilterTabs(), renderCodeTabs()
+// Transforms EVERY item in an array into something new.
+// Returns a new array of the same length — original is untouched.</span>
+
+<span class="cm">// --- renderList(): turn each todo object → an HTML string ---</span>
+<span class="kw">const</span> <span class="fn">renderList</span> <span class="op">=</span> () <span class="op">=></span> {
+  document.getElementById(<span class="str">"todoList"</span>).innerHTML <span class="op">=</span> visible
+    .<span class="acc">map</span>((<span class="acc">{ id, text, done, priority }</span>) <span class="op">=></span> {
+    <span class="cm">// Every todo object → a chunk of HTML markup (a string)</span>
+      <span class="kw">const</span> c <span class="op">=</span> CONCEPTS.find(<span class="acc">x</span> <span class="op">=></span> x.key <span class="op">===</span> getConceptForId(id));
+      <span class="kw">return</span> <span class="str">\`
+        &lt;div class="todo-item \${done ? "done" : ""}"&gt;
+          &lt;button onclick="toggleTask(\${id})"&gt;\${done ? "✓" : ""}&lt;/button&gt;
+          &lt;div class="todo-text"&gt;\${text}&lt;/div&gt;
+          &lt;span class="concept-tag"&gt;\${c.label}&lt;/span&gt;
+        &lt;/div&gt;\`</span>;
+    })
+    .join(<span class="str">""</span>); <span class="cm">// join array of strings → one big HTML string</span>
+};
+
+<span class="cm">// --- renderLegend(): each concept object → a colored badge ---</span>
+CONCEPTS.<span class="acc">map</span>((<span class="acc">{ key, label, color }</span>) <span class="op">=></span>
+  <span class="str">\`&lt;span class="badge" style="color:\${color}"&gt;\${label}&lt;/span&gt;\`</span>
 );
 
-<span class="kw">const</span> highPriority <span class="op">=</span> state.todos.<span class="acc">filter</span>(
-  <span class="acc">({ priority })</span> <span class="op">=></span> priority <span class="op">===</span> <span class="str">'high'</span>
-);
+<span class="cm">// --- renderFilterTabs(): ["all","pending","done"] → 3 tab buttons ---</span>
+FILTERS.<span class="acc">map</span>(<span class="acc">f</span> <span class="op">=></span> <span class="str">\`&lt;button onclick="setFilter('\${f}')"&gt;\${f}&lt;/button&gt;\`</span>);`,
 
-<span class="cm">// filter NEVER mutates — it returns a new array</span>
-console.log(pending.length, <span class="str">'tasks remaining'</span>);`,
+  // ── REDUCE ───────────────────────────────────────────────────────────────
+  reduce: `<span class="cm">// .reduce() — used in renderStats() to calculate the numbers in the stats bar
+// Iterates every item and ACCUMULATES a single result (object, number, string…)
+// Takes: (callback, initialValue)
+// Callback receives: (accumulator, currentItem)</span>
 
-  map: `<span class="cm">// ── MAP: transform every todo into HTML ─────</span>
-<span class="kw">const</span> listHTML <span class="op">=</span> state.todos
-  .<span class="acc">map</span>(<span class="acc">({ id, text, done, priority })</span> <span class="op">=></span> <span class="str">\`
-    &lt;li class="\${done ? 'done' : ''}"&gt;
-      &lt;span&gt;\${text}&lt;/span&gt;
-      &lt;em&gt;\${priority}&lt;/em&gt;
-    &lt;/li&gt;
-  \`</span>)
-  .join(<span class="str">''</span>);
-<span class="cm">//  ↑ map returns a new array; join makes one string</span>
+<span class="cm">// --- renderStats(): walk every todo once, build a summary object ---</span>
+<span class="kw">const</span> <span class="fn">renderStats</span> <span class="op">=</span> () <span class="op">=></span> {
 
-document.getElementById(<span class="str">'list'</span>).innerHTML <span class="op">=</span> listHTML;`,
+  <span class="kw">const</span> <span class="acc">{ total, done, highLeft }</span> <span class="op">=</span> state.todos.<span class="acc">reduce</span>(
+    (acc, <span class="acc">{ done, priority }</span>) <span class="op">=></span> ({
+    <span class="cm">// Return a NEW accumulator object each iteration (don't mutate acc)</span>
+      total:    acc.total <span class="op">+</span> <span class="num">1</span>,
+      <span class="cm">// Increment 'done' count only when the todo is completed</span>
+      done:     acc.done <span class="op">+</span> (done ? <span class="num">1</span> : <span class="num">0</span>),
+      <span class="cm">// Count todos that are high priority AND still pending</span>
+      highLeft: acc.highLeft <span class="op">+</span> (priority <span class="op">===</span> <span class="str">"high"</span> <span class="op">&&</span> <span class="op">!</span>done ? <span class="num">1</span> : <span class="num">0</span>),
+    }),
+    <span class="cm">// ↓ Initial value — accumulator starts here before first iteration</span>
+    { total: <span class="num">0</span>, done: <span class="num">0</span>, highLeft: <span class="num">0</span> }
+  );
+  <span class="cm">// Result is destructured immediately into 3 variables ↑</span>
 
-  reduce: `<span class="cm">// ── REDUCE: compute summary stats ───────────</span>
-<span class="kw">const</span> stats <span class="op">=</span> state.todos.<span class="acc">reduce</span>(
-  (acc, <span class="acc">{ done, priority }</span>) <span class="op">=></span> ({
-    total:    acc.total <span class="op">+</span> <span class="num">1</span>,
-    done:     acc.done  <span class="op">+</span> (done ? <span class="num">1</span> : <span class="num">0</span>),
-    highLeft: acc.highLeft <span class="op">+</span>
-              (priority <span class="op">===</span> <span class="str">'high'</span> <span class="op">&&</span> <span class="op">!</span>done ? <span class="num">1</span> : <span class="num">0</span>),
-  }),
-  { total: <span class="num">0</span>, done: <span class="num">0</span>, highLeft: <span class="num">0</span> }
-<span class="cm">//  ↑ initial accumulator value</span>
-);
-<span class="cm">// stats ← { total: 6, done: 2, highLeft: 2 }</span>`,
+  <span class="kw">const</span> pct <span class="op">=</span> total ? Math.round((done <span class="op">/</span> total) <span class="op">*</span> <span class="num">100</span>) : <span class="num">0</span>;
+  <span class="cm">// pct = completion percentage shown in the progress bar</span>
+};`,
 };
 
 // ─────────────────────────────────────────────
